@@ -1,0 +1,53 @@
+@import "tailwindcss";
+
+/* ---- Paleta Looker Studio / Google (blueprint §7) ---- */
+:root {
+  --bg: #f1f3f4;
+  --card: #ffffff;
+  --ink: #202124;
+  --muted: #5f6368;
+  --line: #e0e0e0;
+  --blue: #4285f4;
+  --green: #34a853;
+  --amber: #fbbc04;
+  --red: #ea4335;
+  --violet: #a142f4;
+  --grey: #9aa0a6;
+
+  --chip-bg: #e8f0fe;
+  --chip-ink: #4285f4;
+  --chip-line: #d2e3fc;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-roboto), Roboto, Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Tarjeta base estilo Looker */
+.lk-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+/* Titulo de tarjeta */
+.lk-card-title {
+  text-transform: uppercase;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+  letter-spacing: 0.3px;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
