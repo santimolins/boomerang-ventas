@@ -6,6 +6,7 @@ import type { VentasData, Funnel } from "@/lib/sheets";
 import { FilterChips } from "@/components/FilterChips";
 import { Scorecards } from "@/components/Scorecards";
 import { ChartsRow, OrigenesRow } from "@/components/Charts";
+import { GanadosTables } from "@/components/GanadosTables";
 import { OportunidadesTables } from "@/components/OportunidadesTables";
 import { formatPct } from "@/lib/format";
 
@@ -134,6 +135,7 @@ export default function DashboardPage() {
           <Scorecards data={data} />
           <ChartsRow data={data} funnel={funnel} kam={kam} />
           <OrigenesRow data={data} funnel={funnel} />
+          <GanadosTables data={data} kam={kam} funnel={funnel} />
           <OportunidadesTables data={data} kam={kam} funnel={funnel} />
 
           <p className="mt-5 italic" style={{ fontSize: 11, color: "var(--grey)" }}>

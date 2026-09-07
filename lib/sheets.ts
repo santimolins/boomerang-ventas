@@ -153,6 +153,14 @@ export type Oportunidad = {
   comentarios: string;
 };
 
+export type Ganado = {
+  empresa: string;
+  kam: string;
+  origen: string;
+  valor: number;
+  fecha: string; // ISO (fecha de ganado)
+};
+
 export type VentasData = {
   mes: string;
   corte: string;
@@ -171,6 +179,7 @@ export type VentasData = {
   origenes: OrigenRow[];
   campanas: CampanaRow[];
   oportunidades: { nuevos: Oportunidad[]; repetidores: Oportunidad[] };
+  ganados: { nuevos: Ganado[]; repetidores: Ganado[] };
 };
 
 // ===========================================================================
@@ -191,6 +200,7 @@ type ARow = {
 const SIG_A = ["lunes", "mes", "funnel", "dimension", "dim_value", "cerradas", "ganadas", "budget_eur"];
 const SIG_B = ["mes", "nuevos_cerradas", "nuevos_ganadas", "repetidores_ganadas", "budget_total"];
 const SIG_C = ["kam", "origen", "deal_id", "empresa/deal", "etapa", "valor_eur", "dias_en_etapa"];
+const SIG_D = ["mes", "fecha_ganado", "funnel", "kam", "origen", "empresa", "valor_eur"];
 
 export function parseA(rows: string[][]): ARow[] {
   const found = findHeader(rows, SIG_A);
@@ -321,6 +331,39 @@ export function parseC(rows: string[][]): { nuevos: Oportunidad[]; repetidores: 
 }
 
 // ===========================================================================
+// Firma D: negocios ganados (tidy, 1 fila por deal ganado)
+// ===========================================================================
+
+export function parseGanados(
+  rows: string[][],
+  mes: string,
+): { nuevos: Ganado[]; repetidores: Ganado[] } {
+  const res = { nuevos: [] as Ganado[], repetidores: [] as Ganado[] };
+  const found = findHeader(rows, SIG_D);
+  if (!found) return res;
+  const { headerIdx, idx } = found;
+  for (let i = headerIdx + 1; i < rows.length; i++) {
+    const r = rows[i];
+    if ((r[idx.mes] ?? "").trim() !== mes) continue; // solo el mes filtrado
+    const funnelRaw = (r[idx.funnel] ?? "").trim();
+    if (!funnelRaw) continue;
+    const g: Ganado = {
+      empresa: (r[idx.empresa] ?? "").trim(),
+      kam: (r[idx.kam] ?? "").trim(),
+      origen: (r[idx.origen] ?? "").trim(),
+      valor: n(r[idx.valor_eur]),
+      fecha: parseEuroDate(r[idx.fecha_ganado]),
+    };
+    if (/repet/i.test(funnelRaw)) res.repetidores.push(g);
+    else res.nuevos.push(g);
+  }
+  const byFecha = (a: Ganado, b: Ganado) => a.fecha.localeCompare(b.fecha);
+  res.nuevos.sort(byFecha);
+  res.repetidores.sort(byFecha);
+  return res;
+}
+
+// ===========================================================================
 // Utilidades de agregacion sobre Firma A
 // ===========================================================================
 
@@ -355,16 +398,18 @@ export async function getVentasData(mes?: string, corte?: string): Promise<Venta
   const spreadsheetId = SHEET_ID();
 
   // Resolver pestanas por firma (en paralelo)
-  const [titleA, titleB, titleC] = await Promise.all([
+  const [titleA, titleB, titleC, titleD] = await Promise.all([
     resolveTabByHeader(sheets, spreadsheetId, SIG_A),
     resolveTabByHeader(sheets, spreadsheetId, SIG_B).catch(() => ""),
     resolveTabByHeader(sheets, spreadsheetId, SIG_C).catch(() => ""),
+    resolveTabByHeader(sheets, spreadsheetId, SIG_D).catch(() => ""),
   ]);
 
-  const [rawA, rawB, rawC] = await Promise.all([
+  const [rawA, rawB, rawC, rawD] = await Promise.all([
     getTabValues(sheets, spreadsheetId, titleA),
     titleB ? getTabValues(sheets, spreadsheetId, titleB) : Promise.resolve([] as string[][]),
     titleC ? getTabValues(sheets, spreadsheetId, titleC) : Promise.resolve([] as string[][]),
+    titleD ? getTabValues(sheets, spreadsheetId, titleD) : Promise.resolve([] as string[][]),
   ]);
 
   const A = parseA(rawA);
@@ -434,6 +479,9 @@ export async function getVentasData(mes?: string, corte?: string): Promise<Venta
   // oportunidades
   const oportunidades = parseC(rawC);
 
+  // ganados (deal a deal) del mes seleccionado
+  const ganados = parseGanados(rawD, selMes);
+
   // pace
   const diasMes = daysInMonth(selMes);
   const diaCorte = selCorte ? Number(selCorte.slice(8, 10)) : 0;
@@ -473,5 +521,6 @@ export async function getVentasData(mes?: string, corte?: string): Promise<Venta
     origenes,
     campanas,
     oportunidades,
+    ganados,
   };
 }
