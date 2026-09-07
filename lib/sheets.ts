@@ -363,9 +363,13 @@ export function parseGanados(
     if (/repet/i.test(funnelRaw)) res.repetidores.push(g);
     else res.nuevos.push(g);
   }
-  const byFecha = (a: Ganado, b: Ganado) => a.fecha.localeCompare(b.fecha);
-  res.nuevos.sort(byFecha);
-  res.repetidores.sort(byFecha);
+  // Orden: KAM -> Cliente (empresa) -> Fecha de ganado.
+  const cmp = (a: Ganado, b: Ganado) =>
+    a.kam.localeCompare(b.kam, "es") ||
+    a.empresa.localeCompare(b.empresa, "es") ||
+    a.fecha.localeCompare(b.fecha);
+  res.nuevos.sort(cmp);
+  res.repetidores.sort(cmp);
   return res;
 }
 
