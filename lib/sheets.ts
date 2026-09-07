@@ -344,7 +344,13 @@ export function parseGanados(
   const { headerIdx, idx } = found;
   for (let i = headerIdx + 1; i < rows.length; i++) {
     const r = rows[i];
-    if ((r[idx.mes] ?? "").trim() !== mes) continue; // solo el mes filtrado
+    const fecha = parseEuroDate(r[idx.fecha_ganado]);
+    // `mes` puede venir como "2026-09" o, si Sheets lo coaccionó, como fecha
+    // formateada. Normalizamos: usamos el texto si es yyyy-MM, si no el mes de
+    // la fecha de ganado.
+    const rawMes = (r[idx.mes] ?? "").trim();
+    const rowMes = /^\d{4}-\d{2}$/.test(rawMes) ? rawMes : fecha.slice(0, 7);
+    if (rowMes !== mes) continue; // solo el mes filtrado
     const funnelRaw = (r[idx.funnel] ?? "").trim();
     if (!funnelRaw) continue;
     const g: Ganado = {
@@ -352,7 +358,7 @@ export function parseGanados(
       kam: (r[idx.kam] ?? "").trim(),
       origen: (r[idx.origen] ?? "").trim(),
       valor: n(r[idx.valor_eur]),
-      fecha: parseEuroDate(r[idx.fecha_ganado]),
+      fecha,
     };
     if (/repet/i.test(funnelRaw)) res.repetidores.push(g);
     else res.nuevos.push(g);
