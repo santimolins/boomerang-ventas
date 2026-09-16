@@ -18,6 +18,7 @@ const BLUE = "#4285f4";
 const GREEN = "#34a853";
 const GREY = "#9aa0a6";
 const VIOLET = "#a142f4";
+const GOLD = "#d4af37";
 
 const axisStyle = { fontSize: 11, fill: "#5f6368" };
 
@@ -98,7 +99,7 @@ export function ChartsRow({
             <Tooltip formatter={(v) => formatEur(Number(v))} />
             <Legend wrapperStyle={{ fontSize: 12 }} />
             {showNuevos && <Bar dataKey="Nuevos" stackId="b" fill={VIOLET} radius={[0, 0, 0, 0]} />}
-            {showRepet && <Bar dataKey="Repetidores" stackId="b" fill={GREY} radius={[3, 3, 0, 0]} />}
+            {showRepet && <Bar dataKey="Repetidores" stackId="b" fill={GOLD} radius={[3, 3, 0, 0]} />}
           </BarChart>
         </ResponsiveContainer>
       </ChartCard>
