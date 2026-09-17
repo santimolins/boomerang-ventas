@@ -146,26 +146,32 @@ export function ActividadKamRow({
   data: VentasData;
   funnel: "Todos" | Funnel;
 }) {
-  const rows = useMemo(() => {
-    const pick = (r: VentasData["kamActividad"][number]) => {
-      if (funnel === "Nuevos") return { cerradas: r.nCerr, ganadas: r.nGan };
-      if (funnel === "Repetidores") return { cerradas: r.rCerr, ganadas: r.rGan };
-      return { cerradas: r.nCerr + r.rCerr, ganadas: r.nGan + r.rGan };
+  const { nuevos, repetidores } = useMemo(() => {
+    const build = (which: "nuevos" | "repetidores") => {
+      const kamRows = data.kamActividad
+        .map((r) => ({
+          label: r.kam,
+          cerradas: which === "nuevos" ? r.nCerr : r.rCerr,
+          ganadas: which === "nuevos" ? r.nGan : r.rGan,
+        }))
+        .filter((x) => x.cerradas > 0 || x.ganadas > 0);
+      if (!kamRows.length) return [];
+      const total = kamRows.reduce(
+        (a, x) => ({ cerradas: a.cerradas + x.cerradas, ganadas: a.ganadas + x.ganadas }),
+        { cerradas: 0, ganadas: 0 },
+      );
+      return [...kamRows, { label: "TOTAL", cerradas: total.cerradas, ganadas: total.ganadas }];
     };
-    const kamRows = data.kamActividad
-      .map((r) => ({ label: r.kam, ...pick(r) }))
-      .filter((x) => x.cerradas > 0 || x.ganadas > 0);
-    if (!kamRows.length) return [];
-    const total = kamRows.reduce(
-      (a, x) => ({ cerradas: a.cerradas + x.cerradas, ganadas: a.ganadas + x.ganadas }),
-      { cerradas: 0, ganadas: 0 },
-    );
-    return [...kamRows, { label: "TOTAL", cerradas: total.cerradas, ganadas: total.ganadas }];
-  }, [data.kamActividad, funnel]);
+    return { nuevos: build("nuevos"), repetidores: build("repetidores") };
+  }, [data.kamActividad]);
+
+  const showNuevos = funnel !== "Repetidores";
+  const showRepet = funnel !== "Nuevos";
 
   return (
-    <div className="mt-3">
-      <HBars title="Actividad por comercial — cerradas vs ganadas" rows={rows} />
+    <div className="grid gap-3 grid-cols-1 lg:grid-cols-2 mt-3">
+      {showNuevos && <HBars title="Nuevos clientes por comercial — cerradas vs ganadas" rows={nuevos} />}
+      {showRepet && <HBars title="Repetidores por comercial — cerradas vs ganadas" rows={repetidores} />}
     </div>
   );
 }
