@@ -110,11 +110,14 @@ export function ChartsRow({
 function HBars({
   title,
   rows,
+  showObjetivo,
 }: {
   title: string;
-  rows: { cerradas: number; ganadas: number; label: string }[];
+  rows: { cerradas: number; ganadas: number; label: string; objetivo?: number }[];
+  showObjetivo?: boolean;
 }) {
-  const height = Math.max(160, rows.length * 30 + 40);
+  const perRow = showObjetivo ? 40 : 30;
+  const height = Math.max(160, rows.length * perRow + 40);
   return (
     <ChartCard title={title} empty={rows.length === 0}>
       <ResponsiveContainer width="100%" height={height}>
@@ -133,6 +136,9 @@ function HBars({
           <Legend wrapperStyle={{ fontSize: 12 }} />
           <Bar dataKey="cerradas" name="Cerradas" fill={BLUE} radius={[0, 3, 3, 0]} />
           <Bar dataKey="ganadas" name="Ganadas" fill={GREEN} radius={[0, 3, 3, 0]} />
+          {showObjetivo && (
+            <Bar dataKey="objetivo" name="Objetivo cerradas" fill={GREY} radius={[0, 3, 3, 0]} />
+          )}
         </BarChart>
       </ResponsiveContainer>
     </ChartCard>
@@ -147,7 +153,8 @@ export function ActividadKamRow({
   funnel: "Todos" | Funnel;
 }) {
   const { nuevos, repetidores } = useMemo(() => {
-    const build = (which: "nuevos" | "repetidores") => {
+    const objFor = (f: Funnel) => data.actividad.find((a) => a.funnel === f)?.objetivo ?? 0;
+    const build = (which: "nuevos" | "repetidores", objetivo: number) => {
       const kamRows = data.kamActividad
         .map((r) => ({
           label: r.kam,
@@ -160,18 +167,26 @@ export function ActividadKamRow({
         (a, x) => ({ cerradas: a.cerradas + x.cerradas, ganadas: a.ganadas + x.ganadas }),
         { cerradas: 0, ganadas: 0 },
       );
-      return [...kamRows, { label: "TOTAL", cerradas: total.cerradas, ganadas: total.ganadas }];
+      // El objetivo de cerradas es a nivel de funnel -> solo en la fila TOTAL.
+      return [...kamRows, { label: "TOTAL", cerradas: total.cerradas, ganadas: total.ganadas, objetivo }];
     };
-    return { nuevos: build("nuevos"), repetidores: build("repetidores") };
-  }, [data.kamActividad]);
+    return {
+      nuevos: build("nuevos", objFor("Nuevos")),
+      repetidores: build("repetidores", objFor("Repetidores")),
+    };
+  }, [data.kamActividad, data.actividad]);
 
   const showNuevos = funnel !== "Repetidores";
   const showRepet = funnel !== "Nuevos";
 
   return (
     <div className="grid gap-3 grid-cols-1 lg:grid-cols-2 mt-3">
-      {showNuevos && <HBars title="Nuevos clientes por comercial — cerradas vs ganadas" rows={nuevos} />}
-      {showRepet && <HBars title="Repetidores por comercial — cerradas vs ganadas" rows={repetidores} />}
+      {showNuevos && (
+        <HBars title="Nuevos clientes por comercial — cerradas vs ganadas" rows={nuevos} showObjetivo />
+      )}
+      {showRepet && (
+        <HBars title="Repetidores por comercial — cerradas vs ganadas" rows={repetidores} showObjetivo />
+      )}
     </div>
   );
 }
