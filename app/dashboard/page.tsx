@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import type { VentasData, Funnel } from "@/lib/sheets";
 import { FilterChips } from "@/components/FilterChips";
 import { Scorecards } from "@/components/Scorecards";
-import { ChartsRow, OrigenesRow } from "@/components/Charts";
+import { ChartsRow, ActividadKamRow, OrigenesRow } from "@/components/Charts";
 import { GanadosTables } from "@/components/GanadosTables";
 import { OportunidadesTables } from "@/components/OportunidadesTables";
 import { formatPct } from "@/lib/format";
@@ -134,6 +134,7 @@ export default function DashboardPage() {
         <div className="mt-4" style={{ opacity: loading ? 0.6 : 1, transition: "opacity .15s" }}>
           <Scorecards data={data} />
           <ChartsRow data={data} funnel={funnel} kam={kam} />
+          <ActividadKamRow data={data} funnel={funnel} />
           <OrigenesRow data={data} funnel={funnel} />
           <GanadosTables data={data} kam={kam} funnel={funnel} />
           <OportunidadesTables data={data} kam={kam} funnel={funnel} />

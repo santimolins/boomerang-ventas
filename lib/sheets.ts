@@ -141,6 +141,13 @@ export type Conversion = {
 };
 export type ActividadRow = { funnel: Funnel; cerradas: number; objetivo: number };
 export type BudgetKamRow = { kam: string; nuevos: number; repetidores: number };
+export type KamActividadRow = {
+  kam: string;
+  nCerr: number; // Nuevos cerradas
+  nGan: number; // Nuevos ganadas
+  rCerr: number; // Repetidores cerradas
+  rGan: number; // Repetidores ganadas
+};
 export type OrigenRow = { origen: string; cerradas: number; ganadas: number };
 export type CampanaRow = { campana: string; cerradas: number; ganadas: number };
 export type Oportunidad = {
@@ -176,6 +183,7 @@ export type VentasData = {
   };
   actividad: ActividadRow[];
   budgetKam: BudgetKamRow[];
+  kamActividad: KamActividadRow[];
   origenes: OrigenRow[];
   campanas: CampanaRow[];
   oportunidades: { nuevos: Oportunidad[]; repetidores: Oportunidad[] };
@@ -476,6 +484,23 @@ export async function getVentasData(mes?: string, corte?: string): Promise<Venta
     .filter((k) => k.nuevos + k.repetidores > 0)
     .sort((a, b) => b.nuevos + b.repetidores - (a.nuevos + a.repetidores));
 
+  // cerradas/ganadas por KAM (separado por funnel; el cliente filtra por funnel)
+  const kamCG = (funnel: Funnel, kam: string) =>
+    actual.find((r) => r.funnel === funnel && r.dimension === "KAM" && r.dimValue === kam);
+  const kamActividad: KamActividadRow[] = kamSet
+    .map((kam) => {
+      const nk = kamCG("Nuevos", kam);
+      const rk = kamCG("Repetidores", kam);
+      return {
+        kam,
+        nCerr: nk?.cerradas ?? 0,
+        nGan: nk?.ganadas ?? 0,
+        rCerr: rk?.cerradas ?? 0,
+        rGan: rk?.ganadas ?? 0,
+      };
+    })
+    .filter((k) => k.nCerr + k.nGan + k.rCerr + k.rGan > 0);
+
   // origenes / campanas
   const origenes: OrigenRow[] = actual
     .filter((r) => r.funnel === "Nuevos" && r.dimension === "Origen")
@@ -528,6 +553,7 @@ export async function getVentasData(mes?: string, corte?: string): Promise<Venta
       { funnel: "Repetidores", cerradas: rT?.cerradas ?? 0, objetivo: obj.repetidores_cerradas },
     ],
     budgetKam,
+    kamActividad,
     origenes,
     campanas,
     oportunidades,

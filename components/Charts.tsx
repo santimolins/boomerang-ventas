@@ -139,6 +139,37 @@ function HBars({
   );
 }
 
+export function ActividadKamRow({
+  data,
+  funnel,
+}: {
+  data: VentasData;
+  funnel: "Todos" | Funnel;
+}) {
+  const rows = useMemo(() => {
+    const pick = (r: VentasData["kamActividad"][number]) => {
+      if (funnel === "Nuevos") return { cerradas: r.nCerr, ganadas: r.nGan };
+      if (funnel === "Repetidores") return { cerradas: r.rCerr, ganadas: r.rGan };
+      return { cerradas: r.nCerr + r.rCerr, ganadas: r.nGan + r.rGan };
+    };
+    const kamRows = data.kamActividad
+      .map((r) => ({ label: r.kam, ...pick(r) }))
+      .filter((x) => x.cerradas > 0 || x.ganadas > 0);
+    if (!kamRows.length) return [];
+    const total = kamRows.reduce(
+      (a, x) => ({ cerradas: a.cerradas + x.cerradas, ganadas: a.ganadas + x.ganadas }),
+      { cerradas: 0, ganadas: 0 },
+    );
+    return [...kamRows, { label: "TOTAL", cerradas: total.cerradas, ganadas: total.ganadas }];
+  }, [data.kamActividad, funnel]);
+
+  return (
+    <div className="mt-3">
+      <HBars title="Actividad por comercial — cerradas vs ganadas" rows={rows} />
+    </div>
+  );
+}
+
 export function OrigenesRow({
   data,
   funnel,
